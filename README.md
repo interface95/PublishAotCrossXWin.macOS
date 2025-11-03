@@ -13,17 +13,17 @@ This package allows using `lld-link` as the linker and [xwin](https://github.com
 
 1. **Install lld-link** (via Homebrew):
    ```bash
-   brew install llvm
+   brew install lld
    
    # Add to PATH (choose based on your Mac)
    # For Apple Silicon (M1/M2/M3):
-   export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+   export PATH="/opt/homebrew/opt/lld/bin:$PATH"
    
    # For Intel Mac:
-   # export PATH="/usr/local/opt/llvm/bin:$PATH"
+   # export PATH="/usr/local/opt/lld/bin:$PATH"
    
    # Or use this universal command:
-   export PATH="$(brew --prefix llvm)/bin:$PATH"
+   export PATH="$(brew --prefix lld)/bin:$PATH"
    ```
 
 2. **Install xwin**:
@@ -45,13 +45,13 @@ This package allows using `lld-link` as the linker and [xwin](https://github.com
 5. **Publish for Windows**:
    ```bash
    # ⚠️ 重要：确保 lld-link 在 PATH 中
-   export PATH="$(brew --prefix llvm)/bin:$PATH"
+   export PATH="$(brew --prefix lld)/bin:$PATH"
    
    # 编译发布
    dotnet publish -r win-x64 -c Release
    ```
    
-   > 💡 提示：建议将 `export PATH="$(brew --prefix llvm)/bin:$PATH"` 添加到 `~/.zshrc` 或 `~/.bash_profile` 中，这样就不需要每次都手动设置了。
+   > 💡 提示：建议将 `export PATH="$(brew --prefix lld)/bin:$PATH"` 添加到 `~/.zshrc` 或 `~/.bash_profile` 中，这样就不需要每次都手动设置了。
 
 ## Configuration
 
@@ -127,10 +127,10 @@ See the [test/](test/) directory for a simple example.
 Ensure LLVM is installed and in your PATH:
 
 ```bash
-brew install llvm
+brew install lld
 
 # Use universal command that works for both Intel and Apple Silicon
-export PATH="$(brew --prefix llvm)/bin:$PATH"
+export PATH="$(brew --prefix lld)/bin:$PATH"
 
 # Verify installation
 which lld-link

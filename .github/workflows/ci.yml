@@ -27,10 +27,8 @@ jobs:
       
     - name: Install and verify lld-link
       run: |
-        brew install llvm
-        LLVM_PATH="$(brew --prefix llvm)/bin"
-        echo "$LLVM_PATH" >> $GITHUB_PATH
-        export PATH="$LLVM_PATH:$PATH"
+        brew install lld
+        echo "$(brew --prefix lld)/bin" >> $GITHUB_PATH
         which lld-link
         lld-link --version
         
