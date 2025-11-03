@@ -35,8 +35,14 @@ This package allows using `lld-link` as the linker and [xwin](https://github.com
 
 5. **Publish for Windows**:
    ```bash
+   # ⚠️ 重要：确保 lld-link 在 PATH 中
+   export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+   
+   # 编译发布
    dotnet publish -r win-x64 -c Release
    ```
+   
+   > 💡 提示：建议将 `export PATH="/opt/homebrew/opt/llvm/bin:$PATH"` 添加到 `~/.zshrc` 或 `~/.bash_profile` 中，这样就不需要每次都手动设置了。
 
 ## Configuration
 
@@ -147,6 +153,38 @@ If empty, re-run:
 
 ```bash
 xwin --accept-license splat --output $HOME/.local/share/xwin-sdk
+```
+
+### Library not found errors (e.g., `could not open 'oleaut32.lib'`)
+
+This happens because macOS has a case-sensitive file system, but the linker expects lowercase library names while Windows SDK uses mixed case (e.g., `OleAut32.Lib`).
+
+**Solution**: Create symbolic links for the libraries:
+
+```bash
+# Navigate to SDK directory
+cd $HOME/.local/share/xwin-sdk/splat
+
+# Create symlinks for SDK libraries (um directory)
+cd sdk/lib/um/x64
+for f in *.Lib; do
+  [ -f "$f" ] || continue
+  lower=$(echo "$f" | tr '[:upper:]' '[:lower:]')
+  [ "$f" != "$lower" ] && ln -sf "$f" "$lower"
+done
+
+# Create symlinks for CRT libraries
+cd $HOME/.local/share/xwin-sdk/splat/crt/lib/x64
+[ -f "libcmt.lib" ] && ln -sf "libcmt.lib" "LIBCMT.lib"
+[ -f "oldnames.lib" ] && ln -sf "oldnames.lib" "OLDNAMES.lib"
+```
+
+Or run this one-liner:
+
+```bash
+cd $HOME/.local/share/xwin-sdk/splat && \
+(cd sdk/lib/um/x64 && for f in *.Lib; do lower=$(echo "$f" | tr '[:upper:]' '[:lower:]'); [ "$f" != "$lower" ] && ln -sf "$f" "$lower"; done) && \
+(cd crt/lib/x64 && ln -sf libcmt.lib LIBCMT.lib && ln -sf oldnames.lib OLDNAMES.lib)
 ```
 
 ## License
