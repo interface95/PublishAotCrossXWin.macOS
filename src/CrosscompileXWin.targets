@@ -33,7 +33,7 @@
               Command="cd &quot;$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)&quot; &amp;&amp; for f in *.Lib; do [ -f &quot;$$f&quot; ] || continue; lower=$$(echo &quot;$$f&quot; | tr '[:upper:]' '[:lower:]'); [ &quot;$$f&quot; != &quot;$$lower&quot; ] &amp;&amp; ln -sf &quot;$$f&quot; &quot;$$lower&quot;; done" />
         <Exec Condition="$([MSBuild]::IsOSPlatform('OSX')) and Exists('$(XwinCache)splat/crt/lib/$(CrossCompileArch)')"
               IgnoreExitCode="true"
-              Command="cd &quot;$(XwinCache)splat/crt/lib/$(CrossCompileArch)&quot; &amp;&amp; (ln -sf libcmt.lib LIBCMT.lib 2>/dev/null || true) &amp;&amp; (ln -sf oldnames.lib OLDNAMES.lib 2>/dev/null || true)" />
+              Command="cd &quot;$(XwinCache)splat/crt/lib/$(CrossCompileArch)&quot;; pwd; ls -la | grep -E 'libcmt|oldnames'; ln -sf libcmt.lib LIBCMT.lib; ln -sf oldnames.lib OLDNAMES.lib; ls -la | grep -E 'LIBCMT|OLDNAMES'" />
 
         <ItemGroup>
             <_NoExpLinkerArg Include="@(LinkerArg->Replace('/NOEXP', ''))" />
