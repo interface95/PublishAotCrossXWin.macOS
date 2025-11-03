@@ -1,52 +1,52 @@
 <Project>
-  <PropertyGroup>
-    <DisableUnsupportedError>true</DisableUnsupportedError>
-  </PropertyGroup>
-
-  <Target Name="PrepareForXWinCrossCompile"
-          AfterTargets="SetupOSSpecificProps"
-          BeforeTargets="LinkNative">
-    <Error Condition="'$(AcceptVSBuildToolsLicense)' != 'true'" Text="Please set AcceptVSBuildToolsLicense to 'true' to accept the VS build tools license: https://go.microsoft.com/fwlink/?LinkId=2086102" />
-
     <PropertyGroup>
-      <CrossCompileRid>$(RuntimeIdentifier)</CrossCompileRid>
-
-      <CrossCompileArch />
-      <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-x64'))">x64</CrossCompileArch>
-      <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-x86'))">x86</CrossCompileArch>
-      <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-arm64'))">arm64</CrossCompileArch>
-      <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-arm'))">arm</CrossCompileArch>
-      
-      <XwinCache Condition="'$(XWinCache)' == ''">$(MSBuildThisFileDirectory).xwin-cache/</XwinCache>
-      <XwinArches Condition="'$(XwinArches)' == ''">x86_64,aarch64</XwinArches>
-      
-      <CppLinker>lld-link</CppLinker>
+        <DisableUnsupportedError>true</DisableUnsupportedError>
     </PropertyGroup>
 
-    <Message Condition="!Exists('$(XwinCache)splat/sdk/lib/ucrt/$(CrossCompileArch)')" Importance="high" Text="The xwin cache does not yet exist, building this may take a while..." />
-    <Exec Condition="!Exists('$(XwinCache)splat/sdk/lib/ucrt/$(CrossCompileArch)')" ContinueOnError="false" ConsoleToMsBuild="true" Command="xwin --accept-license --cache-dir &quot;$(XwinCache)&quot; --arch $(XwinArches) --sdk-version 10.0.22621 splat --preserve-ms-arch-notation --include-debug-symbols" />
-    
-    <!-- Create case-insensitive symlinks for macOS -->
-    <Message Condition="$([MSBuild]::IsOSPlatform('OSX')) and Exists('$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)')" Importance="high" Text="Creating case-insensitive symlinks for Windows SDK libraries..." />
-    <Exec Condition="$([MSBuild]::IsOSPlatform('OSX')) and Exists('$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)')" 
-          IgnoreExitCode="true" 
-          Command="cd &quot;$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)&quot; &amp;&amp; for f in *.Lib; do [ -f &quot;$$f&quot; ] || continue; lower=$$(echo &quot;$$f&quot; | tr '[:upper:]' '[:lower:]'); [ &quot;$$f&quot; != &quot;$$lower&quot; ] &amp;&amp; ln -sf &quot;$$f&quot; &quot;$$lower&quot;; done" />
-    <Exec Condition="$([MSBuild]::IsOSPlatform('OSX')) and Exists('$(XwinCache)splat/crt/lib/$(CrossCompileArch)')" 
-          IgnoreExitCode="true" 
-          Command="cd &quot;$(XwinCache)splat/crt/lib/$(CrossCompileArch)&quot; &amp;&amp; [ -f libcmt.lib ] &amp;&amp; ln -sf libcmt.lib LIBCMT.lib; [ -f oldnames.lib ] &amp;&amp; ln -sf oldnames.lib OLDNAMES.lib" />
+    <Target Name="PrepareForXWinCrossCompile"
+            AfterTargets="SetupOSSpecificProps"
+            BeforeTargets="LinkNative">
+        <Error Condition="'$(AcceptVSBuildToolsLicense)' != 'true'" Text="Please set AcceptVSBuildToolsLicense to 'true' to accept the VS build tools license: https://go.microsoft.com/fwlink/?LinkId=2086102" />
 
-    <ItemGroup>
-      <_NoExpLinkerArg Include="@(LinkerArg->Replace('/NOEXP', ''))" />
-      <_NoExpLinkerArg Remove="@(_NoExpLinkerArg)" Condition="$([System.String]::new('%(Identity)').StartsWith('/SOURCELINK:'))" />
-      <LinkerArg Remove="@(LinkerArg)" />
+        <PropertyGroup>
+            <CrossCompileRid>$(RuntimeIdentifier)</CrossCompileRid>
 
-      <LinkerArg Include="/vctoolsdir:$(XwinCache)splat/crt" />
-      <LinkerArg Include="/winsdkdir:$(XwinCache)splat/sdk" />
-      <LinkerArg Include="/LIBPATH:$(XwinCache)splat/crt/lib/$(CrossCompileArch)/" />
-      <LinkerArg Include="/LIBPATH:$(XwinCache)splat/sdk/lib/ucrt/$(CrossCompileArch)/" />
-      <LinkerArg Include="/LIBPATH:$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)/" />
+            <CrossCompileArch />
+            <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-x64'))">x64</CrossCompileArch>
+            <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-x86'))">x86</CrossCompileArch>
+            <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-arm64'))">arm64</CrossCompileArch>
+            <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-arm'))">arm</CrossCompileArch>
 
-      <LinkerArg Include="@(_NoExpLinkerArg)" />
-    </ItemGroup>
-  </Target>
+            <XwinCache Condition="'$(XWinCache)' == ''">$(MSBuildThisFileDirectory).xwin-cache/</XwinCache>
+            <XwinArches Condition="'$(XwinArches)' == ''">x86_64,aarch64</XwinArches>
+
+            <CppLinker>lld-link</CppLinker>
+        </PropertyGroup>
+
+        <Message Condition="!Exists('$(XwinCache)splat/sdk/lib/ucrt/$(CrossCompileArch)')" Importance="high" Text="The xwin cache does not yet exist, building this may take a while..." />
+        <Exec Condition="!Exists('$(XwinCache)splat/sdk/lib/ucrt/$(CrossCompileArch)')" ContinueOnError="false" ConsoleToMsBuild="true" Command="xwin --accept-license --cache-dir &quot;$(XwinCache)&quot; --arch $(XwinArches) --sdk-version 10.0.22621 splat --preserve-ms-arch-notation --include-debug-symbols" />
+
+        <!-- Create case-insensitive symlinks for macOS -->
+        <Message Condition="$([MSBuild]::IsOSPlatform('OSX')) and Exists('$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)')" Importance="high" Text="Creating case-insensitive symlinks for Windows SDK libraries..." />
+        <Exec Condition="$([MSBuild]::IsOSPlatform('OSX')) and Exists('$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)')"
+              IgnoreExitCode="true"
+              Command="cd &quot;$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)&quot; &amp;&amp; for f in *.Lib; do [ -f &quot;$$f&quot; ] || continue; lower=$$(echo &quot;$$f&quot; | tr '[:upper:]' '[:lower:]'); [ &quot;$$f&quot; != &quot;$$lower&quot; ] &amp;&amp; ln -sf &quot;$$f&quot; &quot;$$lower&quot;; done" />
+        <Exec Condition="$([MSBuild]::IsOSPlatform('OSX')) and Exists('$(XwinCache)splat/crt/lib/$(CrossCompileArch)')"
+              IgnoreExitCode="true"
+              Command="cd &quot;$(XwinCache)splat/crt/lib/$(CrossCompileArch)&quot; &amp;&amp; [ -f libcmt.lib ] &amp;&amp; ln -sf libcmt.lib LIBCMT.lib; [ -f oldnames.lib ] &amp;&amp; ln -sf oldnames.lib OLDNAMES.lib" />
+
+        <ItemGroup>
+            <_NoExpLinkerArg Include="@(LinkerArg->Replace('/NOEXP', ''))" />
+            <_NoExpLinkerArg Remove="@(_NoExpLinkerArg)" Condition="$([System.String]::new('%(Identity)').StartsWith('/SOURCELINK:'))" />
+            <LinkerArg Remove="@(LinkerArg)" />
+
+            <LinkerArg Include="/vctoolsdir:$(XwinCache)splat/crt" />
+            <LinkerArg Include="/winsdkdir:$(XwinCache)splat/sdk" />
+            <LinkerArg Include="/LIBPATH:$(XwinCache)splat/crt/lib/$(CrossCompileArch)/" />
+            <LinkerArg Include="/LIBPATH:$(XwinCache)splat/sdk/lib/ucrt/$(CrossCompileArch)/" />
+            <LinkerArg Include="/LIBPATH:$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)/" />
+
+            <LinkerArg Include="@(_NoExpLinkerArg)" />
+        </ItemGroup>
+    </Target>
 </Project>
