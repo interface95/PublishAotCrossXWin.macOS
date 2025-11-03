@@ -25,14 +25,12 @@ jobs:
       with:
         dotnet-version: '9.0.x'
       
-    - name: Install lld-link
+    - name: Install and verify lld-link
       run: |
         brew install llvm
-        echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
-        
-    - name: Verify lld-link installation
-      run: |
-        export PATH="$(brew --prefix llvm)/bin:$PATH"
+        LLVM_PATH="$(brew --prefix llvm)/bin"
+        echo "$LLVM_PATH" >> $GITHUB_PATH
+        export PATH="$LLVM_PATH:$PATH"
         which lld-link
         lld-link --version
         
