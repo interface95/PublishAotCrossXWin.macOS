@@ -14,7 +14,16 @@ This package allows using `lld-link` as the linker and [xwin](https://github.com
 1. **Install lld-link** (via Homebrew):
    ```bash
    brew install llvm
+   
+   # Add to PATH (choose based on your Mac)
+   # For Apple Silicon (M1/M2/M3):
    export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+   
+   # For Intel Mac:
+   # export PATH="/usr/local/opt/llvm/bin:$PATH"
+   
+   # Or use this universal command:
+   export PATH="$(brew --prefix llvm)/bin:$PATH"
    ```
 
 2. **Install xwin**:
@@ -36,13 +45,13 @@ This package allows using `lld-link` as the linker and [xwin](https://github.com
 5. **Publish for Windows**:
    ```bash
    # ⚠️ 重要：确保 lld-link 在 PATH 中
-   export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+   export PATH="$(brew --prefix llvm)/bin:$PATH"
    
    # 编译发布
    dotnet publish -r win-x64 -c Release
    ```
    
-   > 💡 提示：建议将 `export PATH="/opt/homebrew/opt/llvm/bin:$PATH"` 添加到 `~/.zshrc` 或 `~/.bash_profile` 中，这样就不需要每次都手动设置了。
+   > 💡 提示：建议将 `export PATH="$(brew --prefix llvm)/bin:$PATH"` 添加到 `~/.zshrc` 或 `~/.bash_profile` 中，这样就不需要每次都手动设置了。
 
 ## Configuration
 
@@ -119,7 +128,13 @@ Ensure LLVM is installed and in your PATH:
 
 ```bash
 brew install llvm
-export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+
+# Use universal command that works for both Intel and Apple Silicon
+export PATH="$(brew --prefix llvm)/bin:$PATH"
+
+# Verify installation
+which lld-link
+lld-link --version
 ```
 
 ### `xwin: command not found`
@@ -159,27 +174,9 @@ xwin --accept-license splat --output $HOME/.local/share/xwin-sdk
 
 This happens because macOS has a case-sensitive file system, but the linker expects lowercase library names while Windows SDK uses mixed case (e.g., `OleAut32.Lib`).
 
-**Solution**: Create symbolic links for the libraries:
+**Good news**: Since version 1.0.0, this package **automatically creates symbolic links** during the build process! You don't need to do anything manually.
 
-```bash
-# Navigate to SDK directory
-cd $HOME/.local/share/xwin-sdk/splat
-
-# Create symlinks for SDK libraries (um directory)
-cd sdk/lib/um/x64
-for f in *.Lib; do
-  [ -f "$f" ] || continue
-  lower=$(echo "$f" | tr '[:upper:]' '[:lower:]')
-  [ "$f" != "$lower" ] && ln -sf "$f" "$lower"
-done
-
-# Create symlinks for CRT libraries
-cd $HOME/.local/share/xwin-sdk/splat/crt/lib/x64
-[ -f "libcmt.lib" ] && ln -sf "libcmt.lib" "LIBCMT.lib"
-[ -f "oldnames.lib" ] && ln -sf "oldnames.lib" "OLDNAMES.lib"
-```
-
-Or run this one-liner:
+If you still encounter this issue, it means the automatic symlink creation failed. You can create them manually:
 
 ```bash
 cd $HOME/.local/share/xwin-sdk/splat && \
