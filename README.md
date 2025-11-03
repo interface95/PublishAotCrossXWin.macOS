@@ -159,27 +159,9 @@ xwin --accept-license splat --output $HOME/.local/share/xwin-sdk
 
 This happens because macOS has a case-sensitive file system, but the linker expects lowercase library names while Windows SDK uses mixed case (e.g., `OleAut32.Lib`).
 
-**Solution**: Create symbolic links for the libraries:
+**Good news**: Since version 1.0.0, this package **automatically creates symbolic links** during the build process! You don't need to do anything manually.
 
-```bash
-# Navigate to SDK directory
-cd $HOME/.local/share/xwin-sdk/splat
-
-# Create symlinks for SDK libraries (um directory)
-cd sdk/lib/um/x64
-for f in *.Lib; do
-  [ -f "$f" ] || continue
-  lower=$(echo "$f" | tr '[:upper:]' '[:lower:]')
-  [ "$f" != "$lower" ] && ln -sf "$f" "$lower"
-done
-
-# Create symlinks for CRT libraries
-cd $HOME/.local/share/xwin-sdk/splat/crt/lib/x64
-[ -f "libcmt.lib" ] && ln -sf "libcmt.lib" "LIBCMT.lib"
-[ -f "oldnames.lib" ] && ln -sf "oldnames.lib" "OLDNAMES.lib"
-```
-
-Or run this one-liner:
+If you still encounter this issue, it means the automatic symlink creation failed. You can create them manually:
 
 ```bash
 cd $HOME/.local/share/xwin-sdk/splat && \
