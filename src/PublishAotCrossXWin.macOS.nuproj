@@ -12,8 +12,8 @@
     <PackageTags>native-aot;cross-compile;windows;macos;xwin;lld-link;avalonia;dotnet</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/yourusername/PublishAotCrossXWin.macOS</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/yourusername/PublishAotCrossXWin.macOS</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/interface95/PublishAotCrossXWin.macOS</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/interface95/PublishAotCrossXWin.macOS</PackageProjectUrl>
   </PropertyGroup>
 
   <!-- 打包 targets 文件 -->

@@ -60,16 +60,15 @@ The package uses the following MSBuild properties:
 - **`XWinCache`**: Path to the Windows SDK downloaded by xwin  
   Default: `$(HOME)/.local/share/xwin-sdk/`
 
-- **`PublishAotCrossPath`**: Path to the cloned PublishAotCrossXWin repository  
-  Default: `$(HOME)/.local/share/PublishAotCrossXWin`
-
-You can override these in your project file:
+You can override it in your project file:
 
 ```xml
 <PropertyGroup>
   <XWinCache>/custom/path/to/xwin-sdk/</XWinCache>
 </PropertyGroup>
 ```
+
+> **Note**: Advanced users can also set `PublishAotCrossPath` to use a locally cloned version of the repository instead of the NuGet-bundled targets. This is usually not needed.
 
 ## Supported Targets
 
@@ -174,14 +173,14 @@ xwin --accept-license splat --output $HOME/.local/share/xwin-sdk
 
 This happens because macOS has a case-sensitive file system, but the linker expects lowercase library names while Windows SDK uses mixed case (e.g., `OleAut32.Lib`).
 
-**Good news**: Since version 1.0.0, this package **automatically creates symbolic links** during the build process! You don't need to do anything manually.
+**Good news**: Since version 1.0.0, this package **automatically creates case-corrected copies** during the build process! You don't need to do anything manually.
 
-If you still encounter this issue, it means the automatic symlink creation failed. You can create them manually:
+If you still encounter this issue, it means the automatic file creation failed. You can create them manually:
 
 ```bash
 cd $HOME/.local/share/xwin-sdk/splat && \
-(cd sdk/lib/um/x64 && for f in *.Lib; do lower=$(echo "$f" | tr '[:upper:]' '[:lower:]'); [ "$f" != "$lower" ] && ln -sf "$f" "$lower"; done) && \
-(cd crt/lib/x64 && ln -sf libcmt.lib LIBCMT.lib && ln -sf oldnames.lib OLDNAMES.lib)
+(cd sdk/lib/um/x64 && for f in *.Lib; do lower=$(echo "$f" | tr '[:upper:]' '[:lower:]'); [ "$f" != "$lower" ] && cp "$f" "$lower"; done) && \
+(cd crt/lib/x64 && cp libcmt.lib LIBCMT.lib && cp oldnames.lib OLDNAMES.lib)
 ```
 
 ## License
