@@ -39,58 +39,15 @@ This package allows using `lld-link` as the linker and [xwin](https://github.com
      --arch x86_64,aarch64 \
      splat --preserve-ms-arch-notation
    ```
+   
+   > 💡 **Note**: .NET 9+ doesn't require additional C/C++ runtime libraries, making setup much simpler than .NET 8.
 
-4. **Fix missing library files** (required for .NET 8 support):
-   
-   Due to case-sensitivity issues and architecture-specific downloads, some library files need to be copied:
-   
-   ```bash
-   # Copy missing x64 libraries from arm64 (they're architecture-neutral)
-   cp $HOME/.local/share/xwin-sdk/splat/crt/lib/arm64/libcmt.lib \
-      $HOME/.local/share/xwin-sdk/splat/crt/lib/x64/libcmt.lib
-   
-   cp $HOME/.local/share/xwin-sdk/splat/crt/lib/arm64/oldnames.lib \
-      $HOME/.local/share/xwin-sdk/splat/crt/lib/x64/oldnames.lib
-   
-   cp $HOME/.local/share/xwin-sdk/splat/crt/lib/arm64/libcpmt.lib \
-      $HOME/.local/share/xwin-sdk/splat/crt/lib/x64/libcpmt.lib
-   
-   # Create uppercase symlinks (lld-link may look for these)
-   cd $HOME/.local/share/xwin-sdk/splat/crt/lib/x64/
-   ln -sf libcmt.lib LIBCMT.lib
-   ln -sf oldnames.lib OLDNAMES.lib
-   ln -sf libcpmt.lib LIBCPMT.lib
-   ```
-   
-   > 💡 **Why is this needed?**
-   > - `libcmt.lib` & `oldnames.lib`: Required by all .NET versions
-   > - `libcpmt.lib`: Required by .NET 8 (C++ runtime, not needed in .NET 9+)
-   > - xwin downloads complete libraries for arm64 but may miss some for x64
-   
-   **Or use the provided fix script:**
-   ```bash
-   # If you cloned this repository:
-   chmod +x scripts/fix-xwin-libs.sh
-   ./scripts/fix-xwin-libs.sh
-   
-   # Or download and run directly:
-   curl -fsSL https://raw.githubusercontent.com/interface95/PublishAotCrossXWin.macOS/main/scripts/fix-xwin-libs.sh | bash
-   ```
-   
-   **Or use this one-liner:**
-   ```bash
-   cd $HOME/.local/share/xwin-sdk/splat/crt/lib/x64/ && \
-   for lib in libcmt oldnames libcpmt; do \
-     cp ../arm64/${lib}.lib ./ && ln -sf ${lib}.lib ${lib^^}.lib; \
-   done
-   ```
-
-5. **Add this package to your Native AOT project**:
+4. **Add this package to your Native AOT project**:
    ```xml
    <PackageReference Include="PublishAotCrossXWin.macOS" Version="1.0.0" />
    ```
 
-6. **Publish for Windows**:
+5. **Publish for Windows**:
    ```bash
    # ⚠️ 重要：确保 lld-link 在 PATH 中
    export PATH="$(brew --prefix lld)/bin:$PATH"
@@ -156,7 +113,7 @@ See the [test/](test/) directory for a simple example.
 ## Requirements
 
 - **macOS** (tested on Apple Silicon and Intel)
-- **.NET 8.0 SDK** or later (.NET 8, 9, 10 all supported)
+- **.NET 9.0 SDK** or later (.NET 9, 10+ supported)
 - **Homebrew** (for installing LLVM)
 - **Rust/Cargo** (for installing xwin)
 - **~1.5GB disk space** for Windows SDK
@@ -219,29 +176,6 @@ xwin --accept-license \
   --arch x86_64,aarch64 \
   splat --preserve-ms-arch-notation
 ```
-
-### Missing library errors (`LIBCMT.lib`, `OLDNAMES.lib`, `libcpmt.lib`)
-
-If you see errors like:
-```
-lld-link : error : could not open 'LIBCMT.lib': No such file or directory
-lld-link : error : could not open 'OLDNAMES.lib': No such file or directory
-lld-link : error : could not open 'libcpmt.lib': No such file or directory  // .NET 8 only
-```
-
-**Solution**: Run the library fix command from step 4 in Quick Start:
-
-```bash
-cd $HOME/.local/share/xwin-sdk/splat/crt/lib/x64/ && \
-for lib in libcmt oldnames libcpmt; do \
-  cp ../arm64/${lib}.lib ./ 2>/dev/null && ln -sf ${lib}.lib ${lib^^}.lib; \
-done
-```
-
-**Why this happens:**
-- xwin may download complete libraries for arm64 but miss some for x64
-- .NET 8 requires `libcpmt.lib` (C++ runtime), while .NET 9+ doesn't
-- lld-link on macOS may look for uppercase variants
 
 ### Case-sensitivity issues (e.g., `could not open 'oleaut32.lib'`)
 
