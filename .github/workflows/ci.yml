@@ -17,62 +17,62 @@ jobs:
     name: Build and test
     
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
-      
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '9.0.x'
-      
-    - name: Install lld-link
-      run: |
-        brew install llvm
-        # Add LLVM to PATH (works for both Intel and Apple Silicon)
-        if [ -d "/opt/homebrew/opt/llvm/bin" ]; then
-          echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
-        elif [ -d "/usr/local/opt/llvm/bin" ]; then
-          echo "/usr/local/opt/llvm/bin" >> $GITHUB_PATH
-        else
-          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
-        fi
-        
-    - name: Verify lld-link installation
-      run: |
-        which lld-link || echo "lld-link not found in PATH"
-        lld-link --version
-        
-    - name: Install xwin
-      run: cargo install --locked xwin
-      
-    - name: Setup Windows SDK
-      run: |
-        mkdir -p $HOME/.local/share/xwin-sdk
-        xwin --accept-license splat --output $HOME/.local/share/xwin-sdk
-        
-    - name: Build (CI)
-      if: ${{ github.event.inputs.version == '' }}
-      run: dotnet build -t:Pack src/PublishAotCrossXWin.macOS.nuproj
-      
-    - name: Build (CD)
-      if: ${{ github.event.inputs.version != '' }}
-      run: dotnet build -t:Pack src/PublishAotCrossXWin.macOS.nuproj -p:Version=${{ github.event.inputs.version }}
-      
-    - name: Build test binary
-      run: dotnet publish -r win-x64 -c Release test/Hello.csproj
-      
-    - name: Upload test binary
-      uses: actions/upload-artifact@v4
-      with:
-        name: Hello
-        path: test/bin/Release/net9.0/win-x64/publish/Hello.exe
-        
-    - name: Archive NuGet
-      if: ${{ github.event.inputs.version != '' }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: PublishAotCrossXWin.macOS.${{ github.event.inputs.version }}.nupkg
-        path: src/bin/Debug/PublishAotCrossXWin.macOS.${{ github.event.inputs.version }}.nupkg
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install lld-link
+        run: |
+          brew install llvm
+          # Add LLVM to PATH (works for both Intel and Apple Silicon)
+          if [ -d "/opt/homebrew/opt/llvm/bin" ]; then
+            echo "/opt/homebrew/opt/llvm/bin" >> $GITHUB_PATH
+          elif [ -d "/usr/local/opt/llvm/bin" ]; then
+            echo "/usr/local/opt/llvm/bin" >> $GITHUB_PATH
+          else
+            echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
+          fi
+
+      - name: Verify lld-link installation
+        run: |
+          which lld-link || echo "lld-link not found in PATH"
+          lld-link --version
+
+      - name: Install xwin
+        run: cargo install --locked xwin
+
+      - name: Setup Windows SDK
+        run: |
+          mkdir -p $HOME/.local/share/xwin-sdk
+          xwin --accept-license splat --output $HOME/.local/share/xwin-sdk
+
+      - name: Build (CI)
+        if: ${{ github.event.inputs.version == '' }}
+        run: dotnet build -t:Pack src/PublishAotCrossXWin.macOS.nuproj
+
+      - name: Build (CD)
+        if: ${{ github.event.inputs.version != '' }}
+        run: dotnet build -t:Pack src/PublishAotCrossXWin.macOS.nuproj -p:Version=${{ github.event.inputs.version }}
+
+      - name: Build test binary
+        run: dotnet publish -r win-x64 -c Release test/Hello.csproj
+
+      - name: Upload test binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hello
+          path: test/bin/Release/net9.0/win-x64/publish/Hello.exe
+
+      - name: Archive NuGet
+        if: ${{ github.event.inputs.version != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: PublishAotCrossXWin.macOS.${{ github.event.inputs.version }}.nupkg
+          path: src/bin/Debug/PublishAotCrossXWin.macOS.${{ github.event.inputs.version }}.nupkg
 
   validate:
     needs: build_and_test
@@ -80,10 +80,10 @@ jobs:
     name: Try launching
     
     steps:
-    - name: Download test binary
-      uses: actions/download-artifact@v4
-      with:
-        name: Hello
-        
-    - name: Launch
-      run: ./Hello.exe
+      - name: Download test binary
+        uses: actions/download-artifact@v4
+        with:
+          name: Hello
+
+      - name: Launch
+        run: ./Hello.exe
