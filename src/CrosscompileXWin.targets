@@ -1,38 +1,38 @@
 <Project>
+  <PropertyGroup>
+    <DisableUnsupportedError>true</DisableUnsupportedError>
+  </PropertyGroup>
+
+  <Target Name="PrepareForXWinCrossCompile"
+          AfterTargets="SetupOSSpecificProps"
+          BeforeTargets="LinkNative">
+    <Error Condition="'$(AcceptVSBuildToolsLicense)' != 'true'" Text="Please set AcceptVSBuildToolsLicense to 'true' to accept the VS build tools license: https://go.microsoft.com/fwlink/?LinkId=2086102" />
+
     <PropertyGroup>
-        <DisableUnsupportedError>true</DisableUnsupportedError>
-    </PropertyGroup>
+      <CrossCompileRid>$(RuntimeIdentifier)</CrossCompileRid>
 
-    <Target Name="PrepareForXWinCrossCompile"
-            AfterTargets="SetupOSSpecificProps"
-            BeforeTargets="LinkNative">
-        <Error Condition="'$(AcceptVSBuildToolsLicense)' != 'true'" Text="Please set AcceptVSBuildToolsLicense to 'true' to accept the VS build tools license: https://go.microsoft.com/fwlink/?LinkId=2086102" />
-
-        <PropertyGroup>
-            <CrossCompileRid>$(RuntimeIdentifier)</CrossCompileRid>
-
-            <CrossCompileArch />
-            <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-x64'))">x64</CrossCompileArch>
-            <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-x86'))">x86</CrossCompileArch>
-            <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-arm64'))">arm64</CrossCompileArch>
-            <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-arm'))">arm</CrossCompileArch>
-
+      <CrossCompileArch />
+      <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-x64'))">x64</CrossCompileArch>
+      <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-x86'))">x86</CrossCompileArch>
+      <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-arm64'))">arm64</CrossCompileArch>
+      <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-arm'))">arm</CrossCompileArch>
+      
             <XwinCache Condition="'$(XWinCache)' == ''">$(USERPROFILE)\.local\share\xwin-sdk\</XwinCache>
             <XwinCache Condition="'$(XWinCache)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/.local/share/xwin-sdk/</XwinCache>
             <XwinCache Condition="'$(XWinCache)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.local/share/xwin-sdk/</XwinCache>
-            <XwinArches Condition="'$(XwinArches)' == ''">x86_64,aarch64</XwinArches>
+      <XwinArches Condition="'$(XwinArches)' == ''">x86_64,aarch64</XwinArches>
+      
+      <CppLinker>lld-link</CppLinker>
+    </PropertyGroup>
 
-            <CppLinker>lld-link</CppLinker>
-        </PropertyGroup>
+    <Message Condition="!Exists('$(XwinCache)splat/sdk/lib/ucrt/$(CrossCompileArch)')" Importance="high" Text="The xwin cache does not yet exist, building this may take a while..." />
+    <Exec Condition="!Exists('$(XwinCache)splat/sdk/lib/ucrt/$(CrossCompileArch)')" ContinueOnError="false" ConsoleToMsBuild="true" Command="xwin --accept-license --cache-dir &quot;$(XwinCache)&quot; --arch $(XwinArches) --sdk-version 10.0.22621 splat --preserve-ms-arch-notation --include-debug-symbols" />
 
-        <Message Condition="!Exists('$(XwinCache)splat/sdk/lib/ucrt/$(CrossCompileArch)')" Importance="high" Text="The xwin cache does not yet exist, building this may take a while..." />
-        <Exec Condition="!Exists('$(XwinCache)splat/sdk/lib/ucrt/$(CrossCompileArch)')" ContinueOnError="false" ConsoleToMsBuild="true" Command="xwin --accept-license --cache-dir &quot;$(XwinCache)&quot; --arch $(XwinArches) --sdk-version 10.0.22621 splat --preserve-ms-arch-notation --include-debug-symbols" />
-
-        <ItemGroup>
-            <LinkerArg Include="/vctoolsdir:$(XwinCache)splat/crt" />
-            <LinkerArg Include="/winsdkdir:$(XwinCache)splat/sdk" />
-            <LinkerArg Include="/LIBPATH:$(XwinCache)splat/crt/lib/$(CrossCompileArch)/" />
-            <LinkerArg Include="/LIBPATH:$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)/" />
-        </ItemGroup>
-    </Target>
+    <ItemGroup>
+      <LinkerArg Include="/vctoolsdir:$(XwinCache)splat/crt" />
+      <LinkerArg Include="/winsdkdir:$(XwinCache)splat/sdk" />
+      <LinkerArg Include="/LIBPATH:$(XwinCache)splat/crt/lib/$(CrossCompileArch)/" />
+      <LinkerArg Include="/LIBPATH:$(XwinCache)splat/sdk/lib/um/$(CrossCompileArch)/" />
+    </ItemGroup>
+  </Target>
 </Project>

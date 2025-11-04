@@ -1,5 +1,7 @@
 # PublishAotCrossXWin.macOS
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 This is a NuGet package with MSBuild targets to enable cross-compilation with [Native AOT](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/) from macOS to Windows. It helps resolve the following error:
 
 ```sh
