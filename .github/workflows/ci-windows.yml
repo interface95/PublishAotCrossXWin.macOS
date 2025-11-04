@@ -1,0 +1,78 @@
+name: CI - Windows Cross-compilation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build_and_test_windows:
+    runs-on: macos-latest
+    name: Build and test macOS → Windows cross-compilation
+    
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+      
+    # Windows 交叉编译依赖
+    - name: Install lld-link
+      run: |
+        brew install lld
+        echo "$(brew --prefix lld)/bin" >> $GITHUB_PATH
+        which lld-link
+        lld-link --version
+        
+    - name: Install xwin
+      run: cargo install --locked xwin
+      
+    - name: Setup Windows SDK
+      run: |
+        mkdir -p $HOME/.local/share/xwin-sdk
+        xwin --accept-license splat --output $HOME/.local/share/xwin-sdk
+    
+    # 构建 NuGet 包
+    - name: Build NuGet package
+      run: dotnet build -t:Pack src/PublishAotCross.macOS.nuproj
+      
+    # 测试 Windows 交叉编译
+    - name: Build test binary for Windows x64
+      run: dotnet publish -r win-x64 -c Release test/Hello.csproj
+      
+    - name: Upload Windows test binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: Hello-Windows-x64
+        path: test/bin/Release/net9.0/win-x64/publish/Hello.exe
+    
+    - name: Upload NuGet package
+      uses: actions/upload-artifact@v4
+      with:
+        name: PublishAotCross.macOS.nupkg
+        path: src/bin/Debug/PublishAotCross.macOS.*.nupkg
+
+  # 在 Windows 上验证
+  validate_windows:
+    needs: build_and_test_windows
+    runs-on: windows-latest
+    name: Validate Windows binary
+    
+    steps:
+    - name: Download Windows test binary
+      uses: actions/download-artifact@v4
+      with:
+        name: Hello-Windows-x64
+        
+    - name: Run Windows binary
+      run: ./Hello.exe
+      
+    - name: Check binary info
+      run: |
+        Get-Item Hello.exe | Select-Object Name, Length, LastWriteTime
+

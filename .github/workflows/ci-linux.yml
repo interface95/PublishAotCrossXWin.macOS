@@ -1,4 +1,4 @@
-name: CI
+name: CI - Linux Cross-compilation
 
 on:
   push:
@@ -6,15 +6,11 @@ on:
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version to create'
-        required: false
 
 jobs:
-  build_and_test:
+  build_and_test_linux:
     runs-on: macos-latest
-    name: Build and test cross-compilation
+    name: Build and test macOS → Linux cross-compilation
     
     steps:
     - name: Checkout repo
@@ -24,22 +20,6 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
-      
-    # Windows 交叉编译依赖
-    - name: Install lld-link
-      run: |
-        brew install lld
-        echo "$(brew --prefix lld)/bin" >> $GITHUB_PATH
-        which lld-link
-        lld-link --version
-        
-    - name: Install xwin
-      run: cargo install --locked xwin
-      
-    - name: Setup Windows SDK
-      run: |
-        mkdir -p $HOME/.local/share/xwin-sdk
-        xwin --accept-license splat --output $HOME/.local/share/xwin-sdk
     
     # Linux 交叉编译依赖
     - name: Install Zig
@@ -48,24 +28,9 @@ jobs:
         zig version
         
     # 构建 NuGet 包
-    - name: Build NuGet package (CI)
-      if: ${{ github.event.inputs.version == '' }}
+    - name: Build NuGet package
       run: dotnet build -t:Pack src/PublishAotCross.macOS.nuproj
       
-    - name: Build NuGet package (CD)
-      if: ${{ github.event.inputs.version != '' }}
-      run: dotnet build -t:Pack src/PublishAotCross.macOS.nuproj -p:Version=${{ github.event.inputs.version }}
-      
-    # 测试 Windows 交叉编译
-    - name: Build test binary for Windows
-      run: dotnet publish -r win-x64 -c Release test/Hello.csproj
-      
-    - name: Upload Windows test binary
-      uses: actions/upload-artifact@v4
-      with:
-        name: Hello-Windows
-        path: test/bin/Release/net9.0/win-x64/publish/Hello.exe
-    
     # 测试 Linux 交叉编译
     - name: Build test binary for Linux x64
       run: dotnet publish -r linux-x64 -c Release /p:StripSymbols=false test/Hello.csproj
@@ -86,32 +51,25 @@ jobs:
         name: Hello-Linux-arm64
         path: test/bin/Release/net9.0/linux-arm64/publish/Hello
         
-    # 上传 NuGet 包
-    - name: Archive NuGet package
-      if: ${{ github.event.inputs.version != '' }}
+    # 测试 Linux musl x64 交叉编译
+    - name: Build test binary for Linux musl x64
+      run: dotnet publish -r linux-musl-x64 -c Release /p:StripSymbols=false test/Hello.csproj
+      
+    - name: Upload Linux musl x64 test binary
       uses: actions/upload-artifact@v4
       with:
-        name: PublishAotCross.macOS.${{ github.event.inputs.version }}.nupkg
-        path: src/bin/Debug/PublishAotCross.macOS.${{ github.event.inputs.version }}.nupkg
-
-  # 在 Windows 上验证
-  validate_windows:
-    needs: build_and_test
-    runs-on: windows-latest
-    name: Validate Windows binary
-    
-    steps:
-    - name: Download Windows test binary
-      uses: actions/download-artifact@v4
-      with:
-        name: Hello-Windows
+        name: Hello-Linux-musl-x64
+        path: test/bin/Release/net9.0/linux-musl-x64/publish/Hello
         
-    - name: Run Windows binary
-      run: ./Hello.exe
+    - name: Upload NuGet package
+      uses: actions/upload-artifact@v4
+      with:
+        name: PublishAotCross.macOS.nupkg
+        path: src/bin/Debug/PublishAotCross.macOS.*.nupkg
 
   # 在 Linux x64 上验证
   validate_linux_x64:
-    needs: build_and_test
+    needs: build_and_test_linux
     runs-on: ubuntu-latest
     name: Validate Linux x64 binary
     
@@ -131,10 +89,11 @@ jobs:
       run: |
         file Hello
         ldd Hello
+        ls -lh Hello
 
   # 在 Linux ARM64 上验证
   validate_linux_arm64:
-    needs: build_and_test
+    needs: build_and_test_linux
     runs-on: ubuntu-latest
     name: Validate Linux ARM64 binary
     
@@ -153,7 +112,35 @@ jobs:
       run: chmod +x Hello
         
     - name: Check binary info
-      run: file Hello
+      run: |
+        file Hello
+        ls -lh Hello
       
     - name: Run Linux ARM64 binary (emulated)
       run: qemu-aarch64-static Hello
+
+  # 在 Alpine Linux (musl) 容器中验证
+  validate_linux_musl_x64:
+    needs: build_and_test_linux
+    runs-on: ubuntu-latest
+    name: Validate Linux musl x64 binary
+    container: alpine:latest
+    
+    steps:
+    - name: Download Linux musl x64 test binary
+      uses: actions/download-artifact@v4
+      with:
+        name: Hello-Linux-musl-x64
+        
+    - name: Make executable
+      run: chmod +x Hello
+        
+    - name: Run Linux musl x64 binary
+      run: ./Hello
+      
+    - name: Check binary info
+      run: |
+        apk add --no-cache file
+        file Hello
+        ls -lh Hello
+
