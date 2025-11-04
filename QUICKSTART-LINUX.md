@@ -56,6 +56,62 @@ dotnet publish -r linux-musl-arm64 -c Release
 - `linux-musl-x64` (Alpine Linux)
 - `linux-musl-arm64` (Alpine Linux)
 
+## Deploying to Linux
+
+### Runtime Dependencies
+
+.NET Native AOT binaries on Linux require the **ICU library** (International Components for Unicode) for globalization support.
+
+#### Ubuntu/Debian
+```bash
+sudo apt-get update
+sudo apt-get install -y libicu-dev
+# Or specific version: libicu70, libicu74, etc.
+```
+
+#### CentOS/RHEL/Fedora
+```bash
+sudo yum install -y icu
+# Or: sudo dnf install -y icu
+```
+
+#### Alpine Linux (musl)
+```bash
+apk add --no-cache icu-libs
+```
+
+#### Docker Deployment
+
+**Ubuntu-based:**
+```dockerfile
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y libicu-dev
+COPY YourApp /app/
+WORKDIR /app
+CMD ["./YourApp"]
+```
+
+**Alpine-based:**
+```dockerfile
+FROM alpine:latest
+RUN apk add --no-cache icu-libs
+COPY YourApp /app/
+WORKDIR /app
+CMD ["./YourApp"]
+```
+
+### Optional: Globalization Invariant Mode
+
+If you don't need internationalization support, you can disable ICU dependency:
+
+```xml
+<PropertyGroup>
+  <InvariantGlobalization>true</InvariantGlobalization>
+</PropertyGroup>
+```
+
+**Note:** This removes the ICU dependency but disables culture-specific formatting and locale-aware operations.
+
 ## How It Works
 
 The package automatically detects your target platform:

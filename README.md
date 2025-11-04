@@ -126,6 +126,44 @@ You can override it in your project file:
 - `linux-musl-x64` (Alpine Linux)
 - `linux-musl-arm64` (Alpine Linux)
 
+## Deploying to Linux
+
+### Runtime Dependencies
+
+.NET Native AOT binaries require the **ICU library** on the target Linux system:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install -y libicu-dev
+
+# CentOS/RHEL/Fedora
+sudo yum install -y icu
+
+# Alpine Linux
+apk add --no-cache icu-libs
+```
+
+### Docker Example
+
+```dockerfile
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y libicu-dev
+COPY YourApp /app/
+CMD ["/app/YourApp"]
+```
+
+### Disable ICU Dependency (Optional)
+
+If you don't need internationalization:
+
+```xml
+<PropertyGroup>
+  <InvariantGlobalization>true</InvariantGlobalization>
+</PropertyGroup>
+```
+
+📖 **More details**: See [QUICKSTART-LINUX.md](QUICKSTART-LINUX.md) for complete Linux deployment guide.
+
 ## How It Works
 
 This package is a port of [PublishAotCrossXWin](https://github.com/Windows10CE/PublishAotCrossXWin) (which targets Linux → Windows) adapted for macOS → Windows cross-compilation.

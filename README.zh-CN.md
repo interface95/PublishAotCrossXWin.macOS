@@ -126,6 +126,44 @@ Microsoft.NETCore.Native.Publish.targets(59,5): error : Cross-OS native compilat
 - `linux-musl-x64`（Alpine Linux）
 - `linux-musl-arm64`（Alpine Linux）
 
+## 部署到 Linux
+
+### 运行时依赖
+
+.NET Native AOT 二进制文件需要目标 Linux 系统安装 **ICU 库**（国际化组件）：
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install -y libicu-dev
+
+# CentOS/RHEL/Fedora
+sudo yum install -y icu
+
+# Alpine Linux
+apk add --no-cache icu-libs
+```
+
+### Docker 示例
+
+```dockerfile
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y libicu-dev
+COPY YourApp /app/
+CMD ["/app/YourApp"]
+```
+
+### 禁用 ICU 依赖（可选）
+
+如果不需要国际化支持：
+
+```xml
+<PropertyGroup>
+  <InvariantGlobalization>true</InvariantGlobalization>
+</PropertyGroup>
+```
+
+📖 **更多详情**：查看 [QUICKSTART-LINUX.md](QUICKSTART-LINUX.md) 获取完整的 Linux 部署指南。
+
 ## 工作原理
 
 此包是 [PublishAotCrossXWin](https://github.com/Windows10CE/PublishAotCrossXWin)（针对 Linux → Windows）的移植版本，适配为 macOS → Windows 交叉编译。
