@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.Build.NoTargets">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    
+    <!-- NuGet 包配置 -->
+    <PackageId>PublishAotCross.macOS</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Community</Authors>
+    <Company>Community</Company>
+    <Description>在 macOS 上交叉编译 .NET Native AOT 应用到 Windows 和 Linux 平台。MSBuild targets to aid in crosscompiling Native AOT publishing targeting Windows and Linux from macOS.</Description>
+    <PackageTags>native-aot;cross-compile;windows;linux;macos;xwin;zig;lld-link;avalonia;dotnet</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/interface95/PublishAotCross.macOS</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/interface95/PublishAotCross.macOS</PackageProjectUrl>
+  </PropertyGroup>
+
+  <!-- 打包 targets 文件和工具 -->
+  <ItemGroup>
+    <None Include="PublishAotCross.macOS.targets">
+      <Pack>true</Pack>
+      <PackagePath>build</PackagePath>
+    </None>
+    <None Include="CrosscompileXWin.targets">
+      <Pack>true</Pack>
+      <PackagePath>build</PackagePath>
+    </None>
+    <None Include="CrosscompileLinux.targets">
+      <Pack>true</Pack>
+      <PackagePath>build</PackagePath>
+    </None>
+    <None Include="zig-wrapper">
+      <Pack>true</Pack>
+      <PackagePath>build</PackagePath>
+    </None>
+    <None Include="../README.md">
+      <Pack>true</Pack>
+      <PackagePath>/</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
+

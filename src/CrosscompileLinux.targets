@@ -1,0 +1,29 @@
+<Project>
+  <PropertyGroup>
+    <DisableUnsupportedError>true</DisableUnsupportedError>
+  </PropertyGroup>
+
+  <!-- 设置 Zig wrapper 作为链接器 -->
+  <PropertyGroup Condition="$(RuntimeIdentifier.StartsWith('linux-'))">
+    <CppCompilerAndLinker>$(MSBuildThisFileDirectory)zig-wrapper</CppCompilerAndLinker>
+  </PropertyGroup>
+
+  <Target Name="PrepareForZigCrossCompile"
+          AfterTargets="SetupOSSpecificProps"
+          BeforeTargets="LinkNative"
+          Condition="$(RuntimeIdentifier.StartsWith('linux-'))">
+
+    <!-- 检查 Zig 是否安装 -->
+    <Exec Command="which zig" IgnoreExitCode="true" ConsoleToMsBuild="true">
+      <Output TaskParameter="ExitCode" PropertyName="ZigExitCode" />
+    </Exec>
+    
+    <Error Condition="'$(ZigExitCode)' != '0'" 
+           Text="Zig is not installed or not in PATH. Please install with: brew install zig" />
+
+    <Message Importance="high" Text="Using Zig for cross-compilation to $(RuntimeIdentifier)" />
+    <Message Condition="'$(StripSymbols)' == 'false'" Importance="high" 
+             Text="Symbol stripping is disabled. For smaller binaries, install LLVM: brew install llvm &amp;&amp; export PATH=&quot;$(brew --prefix llvm)/bin:$PATH&quot;" />
+  </Target>
+</Project>
+

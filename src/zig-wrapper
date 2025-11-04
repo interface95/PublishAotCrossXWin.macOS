@@ -1,0 +1,39 @@
+#!/bin/bash
+# Wrapper script for Zig cross-compilation
+# This script filters out incompatible linker arguments for Zig
+
+# Detect target architecture from arguments
+TARGET="x86_64-linux-gnu"
+for arg in "$@"; do
+  case "$arg" in
+    *aarch64-linux*)
+      TARGET="aarch64-linux-gnu"
+      break
+      ;;
+    *x86_64*musl*)
+      TARGET="x86_64-linux-musl"
+      break
+      ;;
+    *aarch64*musl*)
+      TARGET="aarch64-linux-musl"
+      break
+      ;;
+  esac
+done
+
+# Build filtered argument array
+# Skip arguments that are incompatible with Zig's linker
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    -pie|-fuse-ld=bfd|-gz=zlib|-Wl,-pie|-Wl,--gc-sections|-Wl,-z,nostart-stop-gc)
+      # Skip these incompatible arguments
+      ;;
+    *)
+      args+=("$arg")
+      ;;
+  esac
+done
+
+# Call zig cc with target and filtered arguments
+exec zig cc -target "$TARGET" "${args[@]}"

@@ -1,0 +1,21 @@
+<Project>
+
+  <!-- macOS → Windows: 自动接受 VS Build Tools 许可证 -->
+  <PropertyGroup Condition="$(RuntimeIdentifier.Contains('win')) and $([MSBuild]::IsOSPlatform('OSX'))">
+    <AcceptVSBuildToolsLicense Condition="'$(AcceptVSBuildToolsLicense)' == ''">true</AcceptVSBuildToolsLicense>
+  </PropertyGroup>
+
+  <!-- macOS → Linux: 默认禁用符号剥离（除非用户明确安装了 llvm-objcopy）-->
+  <PropertyGroup Condition="$(RuntimeIdentifier.Contains('linux')) and $([MSBuild]::IsOSPlatform('OSX'))">
+    <StripSymbols Condition="'$(StripSymbols)' == ''">false</StripSymbols>
+  </PropertyGroup>
+
+  <!-- macOS/Linux → Windows: 使用 xwin + lld-link -->
+  <Import Project="CrosscompileXWin.targets" 
+          Condition="$(RuntimeIdentifier.Contains('win')) and ($([MSBuild]::IsOSPlatform('Linux')) or $([MSBuild]::IsOSPlatform('OSX')))" />
+
+  <!-- macOS → Linux: 使用 Zig -->
+  <Import Project="CrosscompileLinux.targets" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
+
+</Project>
+

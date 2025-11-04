@@ -1,104 +1,118 @@
 # Quick Start Guide
 
-## Prerequisites
+**PublishAotCross.macOS** - Cross-compile .NET Native AOT from macOS to Windows and Linux
 
-Install the required tools:
+## Choose Your Target Platform
 
+### 🪟 Windows Cross-compilation
+
+**Prerequisites:**
 ```bash
-# 1. Install LLVM (for lld-link)
-brew install llvm
+# 1. Install lld (LLVM linker)
+brew install lld
 
 # 2. Install xwin (requires Rust/Cargo)
 cargo install --locked xwin
 
 # 3. Download Windows SDK
-mkdir -p $HOME/.local/share/xwin-sdk
-xwin --accept-license splat --output $HOME/.local/share/xwin-sdk
+xwin --accept-license --cache-dir "$HOME/.local/share/xwin-sdk/" \
+  --arch x86_64,aarch64 --sdk-version 10.0.22621 \
+  splat --preserve-ms-arch-notation
 ```
 
-## Usage
-
-### Option 1: Use NuGet Package (Recommended)
-
-1. Add to your `.csproj`:
-
+**Add to your project:**
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
     <PublishAot>true</PublishAot>
-    <AcceptVSBuildToolsLicense>true</AcceptVSBuildToolsLicense>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="PublishAotCrossXWin.macOS" Version="1.0.0" />
+    <PackageReference Include="PublishAotCross.macOS" Version="1.0.0" />
   </ItemGroup>
 </Project>
 ```
 
-2. Build:
-
+**Build:**
 ```bash
-export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+export PATH="$(brew --prefix lld)/bin:$PATH"
 dotnet publish -r win-x64 -c Release
 ```
 
-### Option 2: Use Local Clone
+**Output:** `bin/Release/net9.0/win-x64/publish/YourApp.exe`
 
-1. Clone and patch PublishAotCrossXWin:
+---
 
+### 🐧 Linux Cross-compilation
+
+**Prerequisites:**
 ```bash
-git clone https://github.com/Windows10CE/PublishAotCrossXWin.git $HOME/.local/share/PublishAotCrossXWin
-cd $HOME/.local/share/PublishAotCrossXWin
+# Install Zig
+brew install zig
 
-# Patch for macOS support
-sed -i '' 's/IsOSPlatform('\''Linux'\'')/IsOSPlatform('\''Linux'\'') or $([MSBuild]::IsOSPlatform('\''OSX'\''))/' src/PublishAotCrossXWin.targets
+# Optional: Install LLVM for smaller binaries
+brew install llvm
+export PATH="$(brew --prefix llvm)/bin:$PATH"
 ```
 
-2. Add to your `.csproj`:
-
+**Add to your project:**
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
     <PublishAot>true</PublishAot>
-    <XWinCache>$(HOME)/.local/share/xwin-sdk/</XWinCache>
-    <AcceptVSBuildToolsLicense>true</AcceptVSBuildToolsLicense>
   </PropertyGroup>
 
-  <Import Project="$(HOME)/.local/share/PublishAotCrossXWin/src/PublishAotCrossXWin.targets" />
+  <ItemGroup>
+    <PackageReference Include="PublishAotCross.macOS" Version="1.0.0" />
+  </ItemGroup>
 </Project>
 ```
 
-3. Build:
-
+**Build:**
 ```bash
-export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
-dotnet publish -r win-x64 -c Release
+# glibc-based (Ubuntu, Debian, etc.)
+dotnet publish -r linux-x64 -c Release /p:StripSymbols=false
+dotnet publish -r linux-arm64 -c Release /p:StripSymbols=false
+
+# musl-based (Alpine Linux)
+dotnet publish -r linux-musl-x64 -c Release /p:StripSymbols=false
+dotnet publish -r linux-musl-arm64 -c Release /p:StripSymbols=false
 ```
 
-## Output
+**Output:** `bin/Release/net9.0/linux-x64/publish/YourApp`
 
-Your Windows executable will be at:
+> 💡 **Note**: `/p:StripSymbols=false` is required unless you've installed LLVM. Binaries will be larger but fully functional.
 
-```
-bin/Release/net9.0/win-x64/publish/YourApp.exe
-```
-
-Transfer this folder to a Windows machine and run!
+---
 
 ## Troubleshooting
 
+### Windows
+
 | Error | Solution |
 |-------|----------|
-| `lld-link: command not found` | Add LLVM to PATH: `export PATH="/opt/homebrew/opt/llvm/bin:$PATH"` |
-| `Cross-OS native compilation is not supported` | Ensure targets file is imported and `PublishAot=true` |
-| `xwin: command not found` | Install xwin: `cargo install --locked xwin` |
-| Windows SDK not found | Run: `xwin --accept-license splat --output $HOME/.local/share/xwin-sdk` |
+| `lld-link: command not found` | Add to PATH: `export PATH="$(brew --prefix lld)/bin:$PATH"` |
+| `xwin: command not found` | Install: `cargo install --locked xwin` |
+| Windows SDK not found | Run xwin splat command (see prerequisites) |
 
-## Next Steps
+### Linux
 
-- See [README.md](README.md) for detailed documentation
-- Check [test/Hello.csproj](test/Hello.csproj) for a working example
+| Error | Solution |
+|-------|----------|
+| `zig: command not found` | Install: `brew install zig` |
+| `Symbol stripping tool not found` | Add `/p:StripSymbols=false` or install LLVM |
+
+---
+
+## Documentation
+
+- **[README.md](README.md)** - Full documentation
+- **[README.zh-CN.md](README.zh-CN.md)** - 中文文档
+- **[QUICKSTART-LINUX.md](QUICKSTART-LINUX.md)** - Detailed Linux guide
+- **[test/Hello.csproj](test/Hello.csproj)** - Working example
+
+## Related Projects
+
+- **[PublishAotCross](https://github.com/MichalStrehovsky/PublishAotCross)** - Windows → Linux
+- **[PublishAotCrossXWin](https://github.com/Windows10CE/PublishAotCrossXWin)** - Linux → Windows
+- **PublishAotCross.macOS** (this project) - macOS → Windows/Linux

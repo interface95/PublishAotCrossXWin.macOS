@@ -36,13 +36,13 @@ jobs:
         echo "Publishing version: $VERSION"
         
     - name: Build NuGet package
-      run: dotnet build -t:Pack src/PublishAotCrossXWin.macOS.nuproj -p:Version=${{ steps.get_version.outputs.VERSION }} -c Release
+      run: dotnet build -t:Pack src/PublishAotCross.macOS.nuproj -p:Version=${{ steps.get_version.outputs.VERSION }} -c Release
       
     - name: Publish to NuGet
-      run: dotnet nuget push src/bin/Release/PublishAotCrossXWin.macOS.${{ steps.get_version.outputs.VERSION }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push src/bin/Release/PublishAotCross.macOS.${{ steps.get_version.outputs.VERSION }}.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
       
     - name: Upload package artifact
       uses: actions/upload-artifact@v4
       with:
-        name: PublishAotCrossXWin.macOS.${{ steps.get_version.outputs.VERSION }}.nupkg
-        path: src/bin/Release/PublishAotCrossXWin.macOS.${{ steps.get_version.outputs.VERSION }}.nupkg
+        name: PublishAotCross.macOS.${{ steps.get_version.outputs.VERSION }}.nupkg
+        path: src/bin/Release/PublishAotCross.macOS.${{ steps.get_version.outputs.VERSION }}.nupkg

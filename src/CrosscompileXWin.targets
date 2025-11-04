@@ -17,9 +17,9 @@
       <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-arm64'))">arm64</CrossCompileArch>
       <CrossCompileArch Condition="$(CrossCompileRid.EndsWith('-arm'))">arm</CrossCompileArch>
       
-            <XwinCache Condition="'$(XWinCache)' == ''">$(USERPROFILE)\.local\share\xwin-sdk\</XwinCache>
-            <XwinCache Condition="'$(XWinCache)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/.local/share/xwin-sdk/</XwinCache>
-            <XwinCache Condition="'$(XWinCache)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.local/share/xwin-sdk/</XwinCache>
+      <XwinCache Condition="'$(XWinCache)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/.local/share/xwin-sdk/</XwinCache>
+      <XwinCache Condition="'$(XWinCache)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.local/share/xwin-sdk/</XwinCache>
+      <XwinCache Condition="'$(XWinCache)' == ''">$(USERPROFILE)\.local\share\xwin-sdk\</XwinCache>
       <XwinArches Condition="'$(XwinArches)' == ''">x86_64,aarch64</XwinArches>
       
       <CppLinker>lld-link</CppLinker>

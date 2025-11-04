@@ -1,17 +1,23 @@
-# PublishAotCrossXWin.macOS
+# PublishAotCross.macOS
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-This is a NuGet package with MSBuild targets to enable cross-compilation with [Native AOT](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/) from macOS to Windows. It helps resolve the following error:
+This is a NuGet package with MSBuild targets to enable cross-compilation with [Native AOT](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/) from macOS to **both Windows and Linux**. It helps resolve the following error:
 
 ```sh
 $ dotnet publish -r win-x64
 Microsoft.NETCore.Native.Publish.targets(59,5): error : Cross-OS native compilation is not supported.
 ```
 
-This package allows using `lld-link` as the linker and [xwin](https://github.com/Jake-Shadle/xwin) to provide the Windows SDK sysroot, enabling cross-compilation to win-x64/win-arm64/win-x86 from a macOS machine.
+This package provides two cross-compilation toolchains:
+- **Windows targets**: Uses `lld-link` + [xwin](https://github.com/Jake-Shadle/xwin) for Windows SDK
+- **Linux targets**: Uses [Zig](https://ziglang.org/) as a unified cross-compilation toolchain
+
+Enabling cross-compilation to win-x64/win-arm64/win-x86 **and** linux-x64/linux-arm64/linux-musl-* from a macOS machine.
 
 ## Quick Start
+
+### For Windows Cross-compilation
 
 1. **Install lld-link** (via Homebrew):
    ```bash
@@ -46,7 +52,7 @@ This package allows using `lld-link` as the linker and [xwin](https://github.com
 
 4. **Add this package to your Native AOT project**:
    ```xml
-   <PackageReference Include="PublishAotCrossXWin.macOS" Version="1.0.0" />
+   <PackageReference Include="PublishAotCross.macOS" Version="1.0.0" />
    ```
 
 5. **Publish for Windows**:
@@ -59,6 +65,36 @@ This package allows using `lld-link` as the linker and [xwin](https://github.com
    ```
    
    > 💡 提示：建议将 `export PATH="$(brew --prefix lld)/bin:$PATH"` 添加到 `~/.zshrc` 或 `~/.bash_profile` 中，这样就不需要每次都手动设置了。
+
+### For Linux Cross-compilation
+
+1. **Install Zig** (via Homebrew):
+   ```bash
+   brew install zig
+   ```
+
+2. **Add this package to your Native AOT project** (same as above):
+   ```xml
+   <PackageReference Include="PublishAotCross.macOS" Version="1.0.0" />
+   ```
+
+3. **Publish for Linux**:
+   
+   Due to MSBuild property evaluation order, you need to specify the linker via command line:
+   
+   ```bash
+   # glibc-based (Ubuntu, Debian, etc.)
+   dotnet publish -r linux-x64 -c Release /p:StripSymbols=false
+   dotnet publish -r linux-arm64 -c Release /p:StripSymbols=false
+   
+   # musl-based (Alpine Linux)
+   dotnet publish -r linux-musl-x64 -c Release /p:StripSymbols=false
+   dotnet publish -r linux-musl-arm64 -c Release /p:StripSymbols=false
+   ```
+   
+   > 💡 **Note**: The `/p:StripSymbols=false` parameter is required because `llvm-objcopy` is typically not installed. If you install LLVM and add it to PATH, you can omit this parameter.
+
+📖 **Detailed Linux cross-compilation guide**: See [QUICKSTART-LINUX.md](QUICKSTART-LINUX.md)
 
 ## Configuration
 
@@ -79,9 +115,16 @@ You can override it in your project file:
 
 ## Supported Targets
 
+### Windows (via lld-link + xwin)
 - `win-x64`
 - `win-arm64`
 - `win-x86`
+
+### Linux (via Zig)
+- `linux-x64` (glibc)
+- `linux-arm64` (glibc)
+- `linux-musl-x64` (Alpine Linux)
+- `linux-musl-arm64` (Alpine Linux)
 
 ## How It Works
 
@@ -116,9 +159,16 @@ See the [test/](test/) directory for a simple example.
 
 - **macOS** (tested on Apple Silicon and Intel)
 - **.NET 9.0 SDK** or later (.NET 9, 10+ supported)
-- **Homebrew** (for installing LLVM)
+- **Homebrew** (for installing tools)
+
+### For Windows Cross-compilation
+- **LLVM** (`lld-link` linker)
 - **Rust/Cargo** (for installing xwin)
 - **~1.5GB disk space** for Windows SDK
+
+### For Linux Cross-compilation
+- **Zig** (~200MB, includes everything needed)
+- **No additional downloads** - Zig includes built-in sysroot!
 
 ## Limitations
 
@@ -205,5 +255,25 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Related Projects
 
-- [PublishAotCross](https://github.com/MichalStrehovsky/PublishAotCross) - Cross-compile from Windows to Linux
-- [PublishAotCrossXWin](https://github.com/Windows10CE/PublishAotCrossXWin) - Cross-compile from Linux to Windows
+These projects together form a complete .NET Native AOT cross-compilation ecosystem:
+
+### Cross-compilation Toolchains
+
+- **[PublishAotCross](https://github.com/MichalStrehovsky/PublishAotCross)** - Windows → Linux  
+  Uses Zig as linker, supports linux-x64/arm64 and musl variants
+
+- **[PublishAotCrossXWin](https://github.com/Windows10CE/PublishAotCrossXWin)** - Linux → Windows  
+  Uses lld-link + xwin, supports win-x64/arm64/x86
+
+- **PublishAotCross.macOS** (this project) - macOS → Windows/Linux  
+  Combines both approaches for comprehensive cross-compilation from macOS
+
+### Cross-compilation Matrix
+
+| Source ↓ / Target → | Windows | Linux | macOS |
+|---------------------|---------|-------|-------|
+| **Windows** | Native | ✅ PublishAotCross | ❌ |
+| **Linux** | ✅ PublishAotCrossXWin | Native | ❌ |
+| **macOS** | ✅ This project | ✅ This project | Native |
+
+> 💡 **macOS users get the best of both worlds** - cross-compile to both Windows and Linux from a single machine!

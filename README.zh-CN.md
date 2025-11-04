@@ -1,17 +1,23 @@
-# PublishAotCrossXWin.macOS
+# PublishAotCross.macOS
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-这是一个包含 MSBuild targets 的 NuGet 包，用于实现从 macOS 到 Windows 的 [Native AOT](https://learn.microsoft.com/zh-cn/dotnet/core/deploying/native-aot/) 交叉编译。它可以帮助解决以下错误：
+这是一个包含 MSBuild targets 的 NuGet 包，用于实现从 macOS 到 **Windows 和 Linux** 的 [Native AOT](https://learn.microsoft.com/zh-cn/dotnet/core/deploying/native-aot/) 交叉编译。它可以帮助解决以下错误：
 
 ```sh
 $ dotnet publish -r win-x64
 Microsoft.NETCore.Native.Publish.targets(59,5): error : Cross-OS native compilation is not supported.
 ```
 
-该包允许使用 `lld-link` 作为链接器，并使用 [xwin](https://github.com/Jake-Shadle/xwin) 提供 Windows SDK sysroot，从而在 macOS 机器上实现对 win-x64/win-arm64/win-x86 的交叉编译。
+该包提供两种交叉编译工具链：
+- **Windows 目标**：使用 `lld-link` + [xwin](https://github.com/Jake-Shadle/xwin) 提供 Windows SDK
+- **Linux 目标**：使用 [Zig](https://ziglang.org/) 作为统一的交叉编译工具链
+
+在 macOS 机器上实现对 win-x64/win-arm64/win-x86 **以及** linux-x64/linux-arm64/linux-musl-* 的交叉编译。
 
 ## 快速开始
+
+### Windows 交叉编译
 
 1. **安装 lld-link**（通过 Homebrew）：
    ```bash
@@ -46,7 +52,7 @@ Microsoft.NETCore.Native.Publish.targets(59,5): error : Cross-OS native compilat
 
 4. **将此包添加到你的 Native AOT 项目**：
    ```xml
-   <PackageReference Include="PublishAotCrossXWin.macOS" Version="1.0.0" />
+   <PackageReference Include="PublishAotCross.macOS" Version="1.0.0" />
    ```
 
 5. **发布到 Windows**：
@@ -59,6 +65,36 @@ Microsoft.NETCore.Native.Publish.targets(59,5): error : Cross-OS native compilat
    ```
    
    > 💡 提示：建议将 `export PATH="$(brew --prefix lld)/bin:$PATH"` 添加到 `~/.zshrc` 或 `~/.bash_profile` 中，这样就不需要每次都手动设置了。
+
+### Linux 交叉编译
+
+1. **安装 Zig**（通过 Homebrew）：
+   ```bash
+   brew install zig
+   ```
+
+2. **将此包添加到你的 Native AOT 项目**（同上）：
+   ```xml
+   <PackageReference Include="PublishAotCross.macOS" Version="1.0.0" />
+   ```
+
+3. **发布到 Linux**：
+   
+   由于 MSBuild 属性求值顺序的限制，需要通过命令行参数指定链接器选项：
+   
+   ```bash
+   # 基于 glibc（Ubuntu、Debian 等）
+   dotnet publish -r linux-x64 -c Release /p:StripSymbols=false
+   dotnet publish -r linux-arm64 -c Release /p:StripSymbols=false
+   
+   # 基于 musl（Alpine Linux）
+   dotnet publish -r linux-musl-x64 -c Release /p:StripSymbols=false
+   dotnet publish -r linux-musl-arm64 -c Release /p:StripSymbols=false
+   ```
+   
+   > 💡 **注意**：需要 `/p:StripSymbols=false` 参数，因为通常没有安装 `llvm-objcopy`。如果你安装了 LLVM 并添加到 PATH，可以省略此参数。
+
+📖 **详细 Linux 交叉编译指南**：请参阅 [QUICKSTART-LINUX.md](QUICKSTART-LINUX.md)
 
 ## 配置
 
@@ -79,9 +115,16 @@ Microsoft.NETCore.Native.Publish.targets(59,5): error : Cross-OS native compilat
 
 ## 支持的目标平台
 
+### Windows（通过 lld-link + xwin）
 - `win-x64`
 - `win-arm64`
 - `win-x86`
+
+### Linux（通过 Zig）
+- `linux-x64`（glibc）
+- `linux-arm64`（glibc）
+- `linux-musl-x64`（Alpine Linux）
+- `linux-musl-arm64`（Alpine Linux）
 
 ## 工作原理
 
@@ -116,9 +159,16 @@ Microsoft.NETCore.Native.Publish.targets(59,5): error : Cross-OS native compilat
 
 - **macOS**（在 Apple Silicon 和 Intel 上测试通过）
 - **.NET 9.0 SDK** 或更高版本（支持 .NET 9、10+）
-- **Homebrew**（用于安装 LLVM）
+- **Homebrew**（用于安装工具）
+
+### Windows 交叉编译要求
+- **LLVM**（`lld-link` 链接器）
 - **Rust/Cargo**（用于安装 xwin）
 - **约 1.5GB 磁盘空间**用于 Windows SDK
+
+### Linux 交叉编译要求
+- **Zig**（约 200MB，包含所有需要的组件）
+- **无需额外下载** - Zig 内置了 sysroot！
 
 ## 限制
 
@@ -205,6 +255,26 @@ MIT 许可证 - 详见 [LICENSE](LICENSE)。
 
 ## 相关项目
 
-- [PublishAotCross](https://github.com/MichalStrehovsky/PublishAotCross) - 从 Windows 交叉编译到 Linux
-- [PublishAotCrossXWin](https://github.com/Windows10CE/PublishAotCrossXWin) - 从 Linux 交叉编译到 Windows
+这些项目共同构成了完整的 .NET Native AOT 交叉编译生态系统：
+
+### 交叉编译工具链
+
+- **[PublishAotCross](https://github.com/MichalStrehovsky/PublishAotCross)** - Windows → Linux  
+  使用 Zig 作为链接器，支持 linux-x64/arm64 和 musl 变体
+
+- **[PublishAotCrossXWin](https://github.com/Windows10CE/PublishAotCrossXWin)** - Linux → Windows  
+  使用 lld-link + xwin，支持 win-x64/arm64/x86
+
+- **PublishAotCross.macOS**（本项目）- macOS → Windows/Linux  
+  结合两种方法，实现从 macOS 的全面交叉编译
+
+### 交叉编译矩阵
+
+| 源平台 ↓ / 目标平台 → | Windows | Linux | macOS |
+|---------------------|---------|-------|-------|
+| **Windows** | 原生 | ✅ PublishAotCross | ❌ |
+| **Linux** | ✅ PublishAotCrossXWin | 原生 | ❌ |
+| **macOS** | ✅ 本项目 | ✅ 本项目 | 原生 |
+
+> 💡 **macOS 用户拥有两全其美的优势** - 可以从一台机器交叉编译到 Windows 和 Linux！
 
