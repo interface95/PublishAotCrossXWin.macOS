@@ -79,41 +79,9 @@ jobs:
       with:
         name: Hello-Linux-x64
         
-    - name: Install ICU library
+    - name: Make executable and run
       run: |
-        echo "=== Installing ICU library ==="
-        sudo apt-get update -qq
-        
-        # Try multiple package names
-        if sudo apt-get install -y libicu-dev 2>/dev/null; then
-          echo "✓ Installed libicu-dev"
-        elif sudo apt-get install -y libicu70 2>/dev/null; then
-          echo "✓ Installed libicu70"
-        elif sudo apt-get install -y libicu74 2>/dev/null; then
-          echo "✓ Installed libicu74"
-        elif sudo apt-get install -y libicu72 2>/dev/null; then
-          echo "✓ Installed libicu72"
-        else
-          echo "✗ Failed to install ICU library"
-          exit 1
-        fi
-        
-        echo "=== Installed ICU libraries ==="
-        ldconfig -p | grep libicu || echo "No libicu found via ldconfig"
-        
-        echo "=== Checking libicuuc ==="
-        ls -la /lib/*/libicuuc.so.* 2>/dev/null || echo "No libicuuc found"
-        
-        echo "=== Checking libicui18n ==="
-        ls -la /lib/*/libicui18n.so.* 2>/dev/null || echo "No libicui18n found"
-        
-    - name: Make executable
-      run: chmod +x Hello
-        
-    - name: Run Linux x64 binary
-      run: |
-        echo "=== Running binary ==="
-        ldd Hello || true
+        chmod +x Hello
         ./Hello
       
     - name: Check binary info
@@ -139,9 +107,6 @@ jobs:
       with:
         platforms: arm64
         
-    - name: Make executable
-      run: chmod +x Hello
-        
     - name: Check binary info
       run: |
         file Hello
@@ -153,16 +118,7 @@ jobs:
           -v $PWD:/workspace \
           -w /workspace \
           ubuntu:22.04 \
-          bash -c "
-            echo '=== Installing ICU library ===' && \
-            apt-get update -qq && \
-            (apt-get install -y libicu-dev || apt-get install -y libicu70 || apt-get install -y libicu74 || apt-get install -y libicu72) && \
-            echo '=== Verifying ICU ===' && \
-            ldconfig -p | grep libicu && \
-            echo '=== Running binary ===' && \
-            ldd ./Hello && \
-            ./Hello
-          "
+          ./Hello
 
   # 在 Alpine Linux (musl) 容器中验证
   validate_linux_musl_x64:
@@ -177,21 +133,9 @@ jobs:
       with:
         name: Hello-Linux-musl-x64
         
-    - name: Install ICU library
+    - name: Make executable and run
       run: |
-        echo "=== Installing ICU library ==="
-        apk add --no-cache icu-libs
-        echo "=== Installed ICU libraries ==="
-        apk info icu-libs
-        ls -la /usr/lib/libicu* || echo "No libicu found"
-        
-    - name: Make executable
-      run: chmod +x Hello
-        
-    - name: Run Linux musl x64 binary
-      run: |
-        echo "=== Running binary ==="
-        ldd Hello || true
+        chmod +x Hello
         ./Hello
       
     - name: Check binary info
